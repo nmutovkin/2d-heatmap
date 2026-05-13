@@ -578,10 +578,12 @@ export class HeatmapTwoDComponent implements OnDestroy {
       series: [{
         type: 'scatterGL',
         data: d ? this.flatToECharts(d) : [],
-        // At 1024 columns the inter-point gap is sub-pixel, so size 1 fills
-        // the grid without overlap artefacts.
         symbolSize: 1,
         itemStyle: { opacity: 1 },
+        // Must be set on the series itself — the chart-level progressive: 0
+        // only controls the Canvas pipeline and is ignored by echarts-gl's
+        // WebGL renderer, which has its own independent chunking.
+        progressive: 0,
       } as any],
     };
   }
