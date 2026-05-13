@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
+import 'echarts-gl'; // registers scatterGL series type
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -575,10 +576,13 @@ export class HeatmapTwoDComponent implements OnDestroy {
         },
       },
       series: [{
-        type: 'heatmap',
+        type: 'scatterGL',
         data: d ? this.flatToECharts(d) : [],
-        emphasis: { disabled: true },
-      }],
+        // At 1024 columns the inter-point gap is sub-pixel, so size 1 fills
+        // the grid without overlap artefacts.
+        symbolSize: 1,
+        itemStyle: { opacity: 1 },
+      } as any],
     };
   }
 
