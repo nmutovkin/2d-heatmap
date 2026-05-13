@@ -411,19 +411,31 @@ export class HeatmapTwoDComponent implements OnDestroy {
   /** Active drag handle: 'min' | 'max' | null */
   private dragging: 'min' | 'max' | null = null;
 
+  // Stable bound references for add/removeEventListener
+  private readonly onWindowMove = (e: MouseEvent) => {
+    if (!this.dragging) return;
+    const rect = this.cbCanvasRef.nativeElement.getBoundingClientRect();
+    this.applyDrag(e.clientY - rect.top);
+  };
+  private readonly boundMouseUp = () => this.onDocumentMouseUp();
+
   // ── lifecycle ───────────────────────────────────────────────────────────────
 
   constructor() {
     afterNextRender(() => {
       this.initChart();
       this.ctx = this.cbCanvasRef.nativeElement.getContext('2d');
-      this.drawColorbar();
       this.setupResize();
+      // Data may have arrived before the chart was ready (effect fires first).
+      const d = this.data();
+      if (d) this.processData(d);
+      else this.drawColorbar();
     });
 
     effect(() => {
       const d = this.data();
-      if (d) this.processData(d);
+      // Guard: if the chart isn't initialised yet, afterNextRender handles it.
+      if (d && this.chart) this.processData(d);
     });
   }
 
@@ -431,7 +443,7 @@ export class HeatmapTwoDComponent implements OnDestroy {
     this.resizeObserver?.disconnect();
     this.chart?.dispose();
     window.removeEventListener('mousemove', this.onWindowMove);
-    window.removeEventListener('mouseup', this.onWindowUp);
+    window.removeEventListener('mouseup',   this.boundMouseUp);
   }
 
   // ── initialisation ──────────────────────────────────────────────────────────
@@ -755,28 +767,21 @@ export class HeatmapTwoDComponent implements OnDestroy {
 
     if (this.dragging) {
       window.addEventListener('mousemove', this.onWindowMove);
-      window.addEventListener('mouseup',   this.onWindowUp);
+      window.addEventListener('mouseup',   this.boundMouseUp);
     }
   }
 
-  // Handle moves that stay within the canvas element
   onCanvasMoveLocal(e: MouseEvent): void {
     if (this.dragging) this.applyDrag(e.offsetY);
   }
 
-  // Handle moves that leave the canvas while dragging
-  private onWindowMove = (e: MouseEvent): void => {
-    if (!this.dragging) return;
-    const rect = this.cbCanvasRef.nativeElement.getBoundingClientRect();
-    this.applyDrag(e.clientY - rect.top);
-  };
-
   @HostListener('document:mouseup')
-  private onWindowUp = (): void => {
+  onDocumentMouseUp(): void {
+    if (!this.dragging) return;
     this.dragging = null;
     window.removeEventListener('mousemove', this.onWindowMove);
-    window.removeEventListener('mouseup',   this.onWindowUp);
-  };
+    window.removeEventListener('mouseup',   this.boundMouseUp);
+  }
 
   private applyDrag(offsetY: number): void {
     const t       = 1 - Math.max(0, Math.min(1, offsetY / CB_H));
