@@ -560,10 +560,6 @@ export class HeatmapTwoDComponent implements OnDestroy {
       series: [{
         type: 'heatmap',
         data: d ? this.flatToECharts(d) : [],
-        large: true,
-        largeThreshold: 5000,
-        progressive: 40000,
-        progressiveThreshold: 80000,
         emphasis: { disabled: true },
       }],
     };

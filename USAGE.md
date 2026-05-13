@@ -34,8 +34,8 @@ const data: HeatmapData = {
 
 ## Performance note — 1024 × 2000 (≈ 2 M points)
 
-ECharts canvas `large: true` mode handles ~2 M points but the initial JS-side
-array construction takes ~200–500 ms depending on the machine.  For real-time
+ECharts heatmap handles ~2 M points via its internal canvas renderer, but the
+JS-side `[col, row, value][]` array construction takes ~200–500 ms.  For real-time
 or very frequent updates consider:
 
 1. **Web Worker** — build the `[col, row, value][]` array off the main thread
