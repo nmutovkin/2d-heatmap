@@ -515,9 +515,15 @@ export class HeatmapTwoDComponent implements OnDestroy {
     const colors  = this.effectivePaletteColors(palette);
     const rows    = d?.rows ?? 0;
 
+    const colLabels = d?.colLabels;
+    const rowLabels = d?.rowLabels;
+
     return {
       backgroundColor: '#1e1e2e',
       animation: false,
+      // Disable progressive (chunked) rendering — the default causes the
+      // "line by line" appearance on large datasets (>3 000 points).
+      progressive: 0,
       ...(d?.title ? {
         title: {
           text: d.title,
@@ -530,31 +536,46 @@ export class HeatmapTwoDComponent implements OnDestroy {
         confine: true,
         formatter: (params: any) => {
           const [col, row, val] = params.data as [number, number, number];
-          const label = isFinite(val) ? val.toPrecision(6) : 'NaN';
-          return `Col: ${col} &nbsp; Row: ${row}<br/>Value: <b>${label}</b>`;
+          const colLbl = colLabels?.[col] ?? col;
+          const rowLbl = rowLabels?.[row] ?? row;
+          const label  = isFinite(val) ? val.toPrecision(6) : 'NaN';
+          return `Col: ${colLbl} &nbsp; Row: ${rowLbl}<br/>Value: <b>${label}</b>`;
         },
       },
       grid: { left: 60, right: 10, top: d?.title ? 44 : 10, bottom: 50 },
+      // Value axes avoid per-point string-key lookups against a 1024/2000-item
+      // category array, which is the second major overhead on large grids.
       xAxis: {
-        type: 'category',
-        data: d?.colLabels ?? colRange(COLS),
+        type: 'value',
+        min: 0,
+        max: COLS - 1,
         name: 'Column',
         nameLocation: 'middle',
         nameGap: 28,
         nameTextStyle: { color: '#a6adc8' },
-        axisLabel: { color: '#a6adc8', interval: Math.floor(COLS / 8) - 1 },
-        axisTick: { alignWithLabel: true },
+        axisLabel: {
+          color: '#a6adc8',
+          formatter: colLabels
+            ? (v: number) => colLabels[Math.round(v)] ?? v
+            : undefined,
+        },
         axisLine: { lineStyle: { color: '#45475a' } },
         splitArea: { show: false },
       },
       yAxis: {
-        type: 'category',
-        data: d?.rowLabels ?? colRange(rows),
+        type: 'value',
+        min: 0,
+        max: rows - 1,
         name: 'Row',
         nameLocation: 'middle',
         nameGap: 40,
         nameTextStyle: { color: '#a6adc8' },
-        axisLabel: { color: '#a6adc8' },
+        axisLabel: {
+          color: '#a6adc8',
+          formatter: rowLabels
+            ? (v: number) => rowLabels[Math.round(v)] ?? v
+            : undefined,
+        },
         axisLine: { lineStyle: { color: '#45475a' } },
         splitArea: { show: false },
       },
