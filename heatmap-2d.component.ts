@@ -515,9 +515,6 @@ export class HeatmapTwoDComponent implements OnDestroy {
     const colors  = this.effectivePaletteColors(palette);
     const rows    = d?.rows ?? 0;
 
-    const colLabels = d?.colLabels;
-    const rowLabels = d?.rowLabels;
-
     return {
       backgroundColor: '#1e1e2e',
       animation: false,
@@ -536,46 +533,33 @@ export class HeatmapTwoDComponent implements OnDestroy {
         confine: true,
         formatter: (params: any) => {
           const [col, row, val] = params.data as [number, number, number];
-          const colLbl = colLabels?.[col] ?? col;
-          const rowLbl = rowLabels?.[row] ?? row;
+          const colLbl = d?.colLabels?.[col] ?? col;
+          const rowLbl = d?.rowLabels?.[row] ?? row;
           const label  = isFinite(val) ? val.toPrecision(6) : 'NaN';
           return `Col: ${colLbl} &nbsp; Row: ${rowLbl}<br/>Value: <b>${label}</b>`;
         },
       },
       grid: { left: 60, right: 10, top: d?.title ? 44 : 10, bottom: 50 },
-      // Value axes avoid per-point string-key lookups against a 1024/2000-item
-      // category array, which is the second major overhead on large grids.
       xAxis: {
-        type: 'value',
-        min: 0,
-        max: COLS - 1,
+        type: 'category',
+        data: d?.colLabels ?? colRange(COLS),
         name: 'Column',
         nameLocation: 'middle',
         nameGap: 28,
         nameTextStyle: { color: '#a6adc8' },
-        axisLabel: {
-          color: '#a6adc8',
-          formatter: colLabels
-            ? (v: number) => colLabels[Math.round(v)] ?? v
-            : undefined,
-        },
+        axisLabel: { color: '#a6adc8', interval: Math.floor(COLS / 8) - 1 },
+        axisTick: { alignWithLabel: true },
         axisLine: { lineStyle: { color: '#45475a' } },
         splitArea: { show: false },
       },
       yAxis: {
-        type: 'value',
-        min: 0,
-        max: rows - 1,
+        type: 'category',
+        data: d?.rowLabels ?? colRange(rows),
         name: 'Row',
         nameLocation: 'middle',
         nameGap: 40,
         nameTextStyle: { color: '#a6adc8' },
-        axisLabel: {
-          color: '#a6adc8',
-          formatter: rowLabels
-            ? (v: number) => rowLabels[Math.round(v)] ?? v
-            : undefined,
-        },
+        axisLabel: { color: '#a6adc8' },
         axisLine: { lineStyle: { color: '#45475a' } },
         splitArea: { show: false },
       },
